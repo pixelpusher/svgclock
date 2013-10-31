@@ -1,0 +1,61 @@
+body {
+    background-color: black;
+    color: white;
+    font-family: arial, sans-serif;
+    font-size: 14px;
+}
+.container {
+	width:100%;
+}
+
+#canvas {
+    background-color: transparent;
+    width:800px;
+    height:auto;
+    margin: 18px auto;
+}
+
+.clock-face {
+	fill: white;
+	stroke: none;
+}
+
+.end-seconds {
+    -webkit-transform: scale(1);
+    transform: scale(1);
+}
+
+.rotate-me {
+    transition: -webkit-transform 60s ease-out;
+    transition: transform 60s ease-out;
+}
+.end-rotate {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+}
+
+.minutes {
+    fill: orange;
+    opacity:0.8;
+    stroke: none;
+    transition: -webkit-transform 60s ease-in;
+    transition: transform 60s ease-in;
+}
+
+.seconds {
+    fill: black;
+    opacity:0.8;
+    stroke: none;
+    transition: -webkit-transform 1s ease-in;
+    transition: transform 1s ease-in;
+}
+.second-blob {
+    -webkit-transform: scale(0.3);
+    transform: scale(0.3);
+}
+
+
+.hours {
+    fill: lightblue;
+    stroke: black;
+}
