@@ -39,6 +39,8 @@ a {
     transform: rotate(360deg);
 }
 
+.removing-minutes { }
+
 .minutes {
     fill: orange;
     opacity:0.8;
