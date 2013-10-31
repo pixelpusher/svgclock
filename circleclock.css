@@ -6,7 +6,7 @@ body {
 }
 
 a {
-	color:gray;
+	color:#ddd;
 }
 
 .container {
@@ -43,24 +43,25 @@ a {
 
 .minutes {
     fill: orange;
-    opacity:0.8;
+    opacity:0.7;
     stroke: none;
-    transition: -webkit-transform 60s ease-in;
-    transition: transform 60s ease-in;
 }
 
 .seconds {
     fill: black;
-    opacity:0.8;
+    opacity:0.7;
     stroke: none;
-    transition: -webkit-transform 1s ease-in;
-    transition: transform 1s ease-in;
-}
-.second-blob {
-    -webkit-transform: scale(0.3);
-    transform: scale(0.3);
 }
 
+.blobs {
+	fill: #fff;
+	/*
+	opacity: 0.7;
+	stroke-dasharray: 3, 2;
+    stroke: #bbb;
+    stroke-width: 1;
+    */
+}
 
 .hours {
     fill: lightblue;

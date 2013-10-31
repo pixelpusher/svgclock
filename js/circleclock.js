@@ -11,16 +11,17 @@
 // create svg drawing paper
 var svg;
 
-var minutesBlobs, secondsBlobs, hoursBlobs;
+var minutesBlobs, secondsBlobs, hoursBlobs, blobs;
 var clockRadius; // radius of the whole clock (half the diameter)
 var blobRadius;
 var previousDate, currentDate;	// for getting the current time and storing it
-var turns = 6; // for spiral
+var turns = 8; // for spiral
 var max_minutes = 59; // max count of minutes in an hour
 var max_seconds = 59; // max count of seconds in a minute
 var max_millis = 999;
-var timeScale = 60; // useful for speeding up/debugging... usually 59
-var speed = 5;
+var timeScale = 120; // this is the number of blobs in the spiral of seconds, minutes, hours, etc.
+var speed = 2;  // how fast it ticks. 1 is realtime
+
 
 //
 // init everything
@@ -35,6 +36,7 @@ function initCanvas()
 	minutesBlobs = [];
  	secondsBlobs = [];
 	hoursBlobs = [];
+	blobs = [];
 
 	var vb = svg.viewbox();
     var centerX = (vb.width / 2);
@@ -43,30 +45,62 @@ function initCanvas()
 	clockRadius = vb.width * 0.8; // leave some padding
 	blobRadius = clockRadius/20;    
 	
-	var clockFace = svg.circle( clockRadius ).attr('class', 'clock-face')
-		.center(centerX, centerY);
+	//var clockFace = svg.circle( clockRadius ).attr('class', 'clock-face')
+	//	.center(centerX, centerY);
 
+	var blobsGroup = svg.group().attr('class', 'blobs'); // markers for secs & mins
 	var minutes = svg.group().attr('class', 'minutes');
 	var seconds = svg.group().attr('class', 'seconds');
+	
 	//seconds.transform({x:centerX, y:centerY});  // doesn't work...
-//	var hours = svg.group().attr('class', 'hours');
+	//	var hours = svg.group().attr('class', 'hours');
 
 	// set current time
 	currentDate = new Date();
 	
-	var i=currentDate.getMinutes();
+	var calcSeconds =  currentDate.getSeconds() + currentDate.getMilliseconds()/max_millis;
+    var calcMinutes =  currentDate.getMinutes() + calcSeconds/(max_seconds+1);
+	var calcSecondsScaled = parseInt((calcSeconds/(max_seconds+1) * speed * timeScale) % timeScale, 10);
+	var calcMinutesScaled = parseInt((calcMinutes/(max_minutes+1) * speed * timeScale) % timeScale, 10);
 	
-	while (minutesBlobs.length <= i)
+	
+	while (blobs.length < timeScale)
 	{
-		nextMinute(timeScale*minutesBlobs.length/max_minutes);
-	}
-	var i=currentDate.getSeconds();
+		var blob = blobsGroup.circle(0);
 	
-	while (secondsBlobs.length <= i)
+		//spiral
+
+		var	spiralCoords = spiral (blobs.length/timeScale, clockRadius/2-blobRadius, turns);
+			blob.center(
+				centerX,
+				centerY
+			);
+	
+		blob.animate(500/speed, SVG.easing.quad)
+			.size(blobRadius*2,blobRadius*2)
+			.center(
+			centerX+spiralCoords.x, 
+			centerY+spiralCoords.y
+		);
+	
+		// keep reference to this element for later
+		blobs.push(  blob );
+	}
+	
+	while (minutesBlobs.length <= calcMinutesScaled)
 	{
-		nextSecond(timeScale*secondsBlobs.length/max_seconds);
+		nextMinute(minutesBlobs.length);
+	}
+
+	
+	while (secondsBlobs.length <= calcSecondsScaled)
+	{
+		nextSecond(secondsBlobs.length);
 	}
 	
+	
+	
+	updateTime();
 	
 	setInterval(updateTime, 10);
 }
@@ -77,7 +111,7 @@ function initCanvas()
 //
 function nextSecond(time) {
 
-	console.log(time);
+	//console.log(time);
 	
 	if (time == 0)
 	{
@@ -98,7 +132,7 @@ function nextSecond(time) {
     var centerX = (vb.width / 2);
     var centerY = (vb.height / 2);
 
-	var animationTime = 1000*timeScale/max_seconds;
+	var animationTime = 1000/speed;
 	
 	var secondsGroup = $('.seconds');
 	if (secondsGroup != null) secondsGroup = secondsGroup[0].instance;
@@ -117,7 +151,7 @@ function nextSecond(time) {
 		var prevSpiralCoords = {x: 0, y: 0};
 
 		// last position
-		prevSpiralCoords = spiral (1-(time-timeScale/max_seconds)/timeScale, clockRadius/2-blobRadius, turns);
+		prevSpiralCoords = spiral (1-(time+1)/timeScale, clockRadius/2-blobRadius, turns);
 		
 		// animate it into position, then remove it afterwards
 		secondsBlob.animate(animationTime, '<')
@@ -125,6 +159,7 @@ function nextSecond(time) {
 				centerX+prevSpiralCoords.x, 
 				centerY+prevSpiralCoords.y
 			)
+			.opacity(0)
 			.size(0,0)
 			.after(function() { this.remove(); });
 	}
@@ -133,6 +168,7 @@ function nextSecond(time) {
 	else 
 	{	
 		var secondsBlob = secondsGroup.circle(0);
+		secondsBlob.opacity(0);		
 		// linear
 		//secondsBlob.center(seconds*blobRadius, centerY);
 
@@ -142,7 +178,7 @@ function nextSecond(time) {
 		// last position
 		if (time > 0)
 		{
-			prevSpiralCoords = spiral ((time-timeScale/max_seconds)/timeScale, clockRadius/2-blobRadius, turns);
+			prevSpiralCoords = spiral ((time-1)/timeScale, clockRadius/2-blobRadius, turns);
 			secondsBlob.center(
 				centerX+prevSpiralCoords.x, 
 				centerY+prevSpiralCoords.y
@@ -159,6 +195,7 @@ function nextSecond(time) {
 
 		secondsBlob.animate(animationTime, SVG.easing.quad)
 			.size(blobRadius,blobRadius)
+			.opacity(1)
 			.center(
 			centerX+spiralCoords.x, 
 			centerY+spiralCoords.y
@@ -201,7 +238,7 @@ function nextMinute(time) {
     var centerX = (vb.width / 2);
     var centerY = (vb.height / 2);
 	
-	var animationTime = 60000*timeScale/max_minutes;
+	var animationTime = 60000/speed;
 
 	var minutesGroup = $('.minutes');
 	if (minutesGroup != null) minutesGroup = minutesGroup[0].instance;
@@ -220,7 +257,7 @@ function nextMinute(time) {
 		var prevSpiralCoords = {x: 0, y: 0};
 
 		// last position
-		prevSpiralCoords = spiral (1-(time-timeScale/max_seconds)/timeScale, clockRadius/2-blobRadius, turns);
+		prevSpiralCoords = spiral (1-(time+1)/timeScale, clockRadius/2-blobRadius, turns);
 		
 		// animate it into position, then remove it afterwards
 		minutesBlob.animate(animationTime, '<')
@@ -228,6 +265,7 @@ function nextMinute(time) {
 				centerX+prevSpiralCoords.x, 
 				centerY+prevSpiralCoords.y
 			)
+			.opacity(0)
 			.size(0,0)
 			.after(function() { this.remove(); });
 	}
@@ -236,6 +274,7 @@ function nextMinute(time) {
 	else 
 	{	
 		var minutesBlob = minutesGroup.circle(0);
+		minutesBlob.opacity(0);
 		// linear
 		//minutesBlob.center(minutes*blobRadius, centerY);
 
@@ -245,7 +284,7 @@ function nextMinute(time) {
 		// last position
 		if (time > 0)
 		{
-			var prevSpiralCoords = spiral ((time-timeScale/max_seconds)/timeScale, clockRadius/2-blobRadius, turns);
+			var prevSpiralCoords = spiral ((time-1)/timeScale, clockRadius/2-blobRadius, turns);
 			minutesBlob.center(
 				centerX+prevSpiralCoords.x, 
 				centerY+prevSpiralCoords.y
@@ -261,7 +300,8 @@ function nextMinute(time) {
 	
 
 		minutesBlob.animate(animationTime, SVG.easing.quad)
-			.size(blobRadius*2,blobRadius*2)
+			.size(blobRadius*1.5,blobRadius*1.5)
+			.opacity(1)
 			.center(
 			centerX+spiralCoords.x, 
 			centerY+spiralCoords.y
@@ -282,7 +322,7 @@ function spiral( index, maxRadius, turns)
 {
 	// spiral
     var angle = turns * Math.log(1+index) * 2 * Math.PI;
-    var spiralRadius = index*maxRadius;
+    var spiralRadius = (index*0.98+0.02)*maxRadius;
  	var x = Math.cos(angle)*spiralRadius; 
     var y = Math.sin(angle)*spiralRadius;
     
@@ -307,15 +347,25 @@ function updateTime() {
     var calcHours =  currentDate.getHours() + calcMinutes/(max_minutes+1);
     
     // TODO - add more math to make more dots... 
-    
-    
-    // if the seconds have changed from 59 to 0 (e.g. a minute passed) then run the function
-	if (currentDate.getSeconds() != previousDate.getSeconds()) 
-		nextSecond(timeScale * currentDate.getSeconds()/max_seconds);
 
+	var calcSecondsPrev =  previousDate.getSeconds() + previousDate.getMilliseconds()/max_millis;
+    var calcSecondsPrevScaled = parseInt((calcSecondsPrev/(max_seconds+1) * speed * timeScale) % timeScale,10);
+    var calcSecondsScaled = parseInt((calcSeconds/(max_seconds+1) * speed * timeScale) % timeScale, 10);
+
+	var calcMinutesPrev =  previousDate.getMinutes() + calcSecondsPrev/(max_seconds+1);
+    var calcMinutesPrevScaled = parseInt((calcMinutesPrev/(max_minutes+1) * speed * timeScale) % timeScale,10);
+    var calcMinutesScaled = parseInt((calcMinutes/(max_minutes+1) * speed * timeScale) % timeScale, 10);
+
+    
     // if the seconds have changed from 59 to 0 (e.g. a minute passed) then run the function
-	if (currentDate.getMinutes() != previousDate.getMinutes()) 
-		nextMinute(timeScale*currentDate.getMinutes()/max_minutes);
+// 	if (currentDate.getSeconds() != previousDate.getSeconds()) 
+// 		nextSecond(timeScale * currentDate.getSeconds()/max_seconds);
+
+ 	if (calcSecondsPrevScaled != calcSecondsScaled) 
+ 		nextSecond(calcSecondsScaled);
+
+ 	if (calcMinutesPrevScaled != calcMinutesScaled) 
+ 		nextMinute(calcMinutesScaled);
 	
 	
 }
