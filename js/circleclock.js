@@ -69,10 +69,6 @@ function initCanvas()
 }
 
 
-// 	$("#rotate-me").toggleClass('end-rotate');
-
-
-
 //
 // handle next second
 //
@@ -82,12 +78,15 @@ function nextSecond(seconds) {
 	if (seconds == 0)
 	{
 		$("#canvas").toggleClass('end-rotate');
+		console.log("toggle rotate");
+		// OLD - now removes seconds when it rotates back
+		//
 		// remove old seconds
-		while (secondsBlobs.length > 0)
-		{
-			var blob = secondsBlobs.pop();
-			blob.remove();
-		}
+// 		while (secondsBlobs.length > 0)
+// 		{
+// 			var blob = secondsBlobs.pop();
+// 			blob.remove();
+// 		}
 		
 	}
 	
@@ -99,41 +98,70 @@ function nextSecond(seconds) {
 	var secondsGroup = $('.seconds');
 	if (secondsGroup != null) secondsGroup = secondsGroup[0].instance;
 
-    var secondsBlob = secondsGroup.circle(0);
-    // linear
-    //secondsBlob.center(seconds*blobRadius, centerY);
+	// are we removing old or adding new elements?
+	// if the canvas element has the 'end-rotate' class, it means we're rotating backwards
+	// and thus removing elements 
+	var adding = $("#canvas").hasClass('end-rotate');
 
-    
-    //spiral
-
-	// last position
-	if (seconds > 0)
+	// if we're removing ('adding' is false)
+	if (false === adding)
 	{
-    	var prevSpiralCoords = spiral ((seconds-1)/59, clockRadius/2-blobRadius, turns);
-		secondsBlob.center(
-    		centerX+prevSpiralCoords.x, 
-    		centerY+prevSpiralCoords.y
-    	);
-    }
-    else
-    {
-    	secondsBlob.center(centerX,centerY);
-    }
-    
-	// current position
-	var spiralCoords = spiral (seconds/59, clockRadius/2-blobRadius, turns);
-    
+		// remove last element
+		var secondsBlob = secondsBlobs.pop();
 
-    secondsBlob.animate(1000, '>')
-    	.size(blobRadius,blobRadius)
-    	.center(
-    	centerX+spiralCoords.x, 
-    	centerY+spiralCoords.y
-    );
+		var prevSpiralCoords = {x: 0, y: 0};
+
+		// last position
+		prevSpiralCoords = spiral (1-(seconds-1)/59, clockRadius/2-blobRadius, turns);
+		
+		// animate it into position, then remove it afterwards
+		secondsBlob.animate(1000, '<')
+			.center(
+				centerX+prevSpiralCoords.x, 
+				centerY+prevSpiralCoords.y
+			)
+			.size(0,0)
+			.after(function() { this.remove(); });
+	}
 	
-	// keep reference to this element for later
-	secondsBlobs.push(  secondsBlob );
+	// otherwise, we're adding new ones:
+	else 
+	{	
+		var secondsBlob = secondsGroup.circle(0);
+		// linear
+		//secondsBlob.center(seconds*blobRadius, centerY);
+
 	
+		//spiral
+
+		// last position
+		if (seconds > 0)
+		{
+			var prevSpiralCoords = spiral ((seconds-1)/59, clockRadius/2-blobRadius, turns);
+			secondsBlob.center(
+				centerX+prevSpiralCoords.x, 
+				centerY+prevSpiralCoords.y
+			);
+		}
+		else
+		{
+			secondsBlob.center(centerX,centerY);
+		}
+	
+		// current position
+		var spiralCoords = spiral (seconds/59, clockRadius/2-blobRadius, turns);
+	
+
+		secondsBlob.animate(1000, SVG.easing.quad)
+			.size(blobRadius,blobRadius)
+			.center(
+			centerX+spiralCoords.x, 
+			centerY+spiralCoords.y
+		);
+	
+		// keep reference to this element for later
+		secondsBlobs.push(  secondsBlob );
+	}
 	
 	//secondsBlob.attr('class', 'seconds end-seconds');
 
@@ -193,7 +221,7 @@ function nextMinute(minutes) {
 	var spiralCoords = spiral (minutes/59, clockRadius/2-blobRadius, turns);
     
 
-    minutesBlob.animate(60000, '>')
+    minutesBlob.animate(60000, SVG.easing.quad)
     	.size(blobRadius*2,blobRadius*2)
     	.center(
     	centerX+spiralCoords.x, 

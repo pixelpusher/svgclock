@@ -4,6 +4,11 @@ body {
     font-family: arial, sans-serif;
     font-size: 14px;
 }
+
+a {
+	color:gray;
+}
+
 .container {
 	width:100%;
 }
